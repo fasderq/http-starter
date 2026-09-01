@@ -1,73 +1,88 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# http-starter
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Стартовый HTTP-сервис на `NestJS` + `Fastify` с быстрым dev/prod циклом на `SWC`, логированием через `pino` и конфигом с валидацией через `zod`.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Технологии
 
-## Description
+- `NestJS` 12
+- `Fastify` (`@nestjs/platform-fastify`)
+- `SWC` для сборки и dev-runtime
+- `Vitest` для тестов
+- `nestjs-pino` + `pino-pretty` (pretty только в dev)
+- `@nestjs/config` + `zod` для валидации env
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
+## Быстрый старт
 
 ```bash
-$ yarn install
+yarn install
+cp .env.example .env
 ```
 
-## Running the app
+Для Windows можно просто создать `.env` рядом с `.env.example`.
+
+## Переменные окружения
+
+Смотри `.env.example`:
+
+- `NODE_ENV=development`
+- `PORT=3000`
+- `GLOBAL_PREFIX=api`
+
+Валидация выполняется на старте приложения (`zod`), поэтому при неверном env приложение не поднимется.
+
+## Скрипты
 
 ```bash
-# development
-$ yarn run start
+# сборка
+yarn build
 
-# watch mode
-$ yarn run start:dev
+# запуск собранной версии
+yarn start
 
-# production mode
-$ yarn run start:prod
+# dev-режим с watch (SWC runtime)
+yarn start:dev
+
+# dev-режим с инспектором
+yarn start:debug
+
+# тесты
+yarn test
+yarn test:e2e
+yarn test:cov
 ```
 
-## Test
+## Роутинг и префикс
 
-```bash
-# unit tests
-$ yarn run test
+- Глобальный префикс берется из `GLOBAL_PREFIX` (по умолчанию `api`).
+- `health` и `ready` исключены из префикса.
 
-# e2e tests
-$ yarn run test:e2e
+Примеры:
 
-# test coverage
-$ yarn run test:cov
-```
+- `GET /health`
+- `GET /ready`
+- API-роуты: `GET /api/...` (или другой префикс из `GLOBAL_PREFIX`)
 
-## Support
+## Логирование
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- Используется `pino` через `nestjs-pino`.
+- В `development` включается `pino-pretty`.
+- В `production` логи остаются в JSON-формате.
 
-## Stay in touch
+## Ошибки
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- Подключен глобальный `HttpExceptionFilter` для унификации ошибок Nest-исключений.
+- Для несуществующих роутов используется стандартный fastify 404-ответ.
 
-## License
+## Тестирование
 
-Nest is [MIT licensed](LICENSE).
+- Тест-раннер: `Vitest`
+- E2E: `test/app.e2e-spec.ts`
+- Проверяются `health`, `ready`, поведение префикса и 404 для неизвестного маршрута.
+
+## Структура
+
+- `src/main.ts` — bootstrap приложения
+- `src/app.module.ts` — корневой модуль
+- `src/config/*` — конфиг, schema и типобезопасный сервис
+- `src/logger/*` — логирование
+- `src/health/*` — health/readiness endpoints
